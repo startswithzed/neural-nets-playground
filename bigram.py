@@ -58,7 +58,7 @@ class Head(nn.Module):
         q = self.query(x)
 
         # compute attention scores "affinities"
-        wei = q @ k.transpose(-2, -1) * C** -0.5
+        wei = q @ k.transpose(-2, -1) * C ** -0.5
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
         wei = F.softmax(wei, dim=1)
 
@@ -78,6 +78,7 @@ class MultiHeadAttention(nn.Module):
     def forward(self, x):
         return torch.cat([h(x) for h in self.heads], dim=-1)
 
+
 class FeedForward(nn.Module):
     """simple linear layer followed by non-linearity"""
 
@@ -91,6 +92,22 @@ class FeedForward(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+
+class Block(nn.Module):
+    """Transformer block: communication followed by computation"""
+
+    def __init__(self, n_embed, n_head):
+        super().__init__()
+        head_size = n_embed // n_head
+        self.sa = MultiHeadAttention(n_head, head_size)
+        self.ffwd = FeedForward(n_embed)
+
+    def forward(self, x):
+        x = self.sa(x)
+        x = self.ffwd(x)
+        return x
+
+
 # Bigram Langugage Model
 class BigramLanguageModel(nn.Module):
 
@@ -100,8 +117,11 @@ class BigramLanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, n_embed)
         # encoding the position of the tokens
         self.position_embedding_table = nn.Embedding(block_size, n_embed)
-        self.sa_heads = MultiHeadAttention(4, n_embed // 4) # 4 heads of 8-dimensional self-attention
-        self.ffwd = FeedForward(n_embed)
+        self.blocks = nn.Sequential(
+            Block(n_embed, n_head=4),
+            Block(n_embed, n_head=4),
+            Block(n_embed, n_head=4)
+        )
         self.lm_head = nn.Linear(n_embed, vocab_size)
 
     def forward(self, idx, targets=None):
@@ -110,8 +130,7 @@ class BigramLanguageModel(nn.Module):
         pos_embeds = self.position_embedding_table(torch.arange(T, device=device))  # (T, C)
         # x holds the token identities and also the positions at which these tokens occur
         x = token_embeds + pos_embeds  # (B, T, C)
-        x = self.sa_heads(x)
-        x= self.ffwd(x)
+        x = self.blocks(x)
         logits = self.lm_head(x)  # (B, T, vocab_size)
 
         # loss function
