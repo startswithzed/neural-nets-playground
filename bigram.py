@@ -58,9 +58,9 @@ class Head(nn.Module):
         q = self.query(x)
 
         # compute attention scores "affinities"
-        wei = q @ k.transpose(-2, -1) * C ** -0.5
+        wei = q @ k.transpose(-2, -1) * C**-0.5
         wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
-        wei = F.softmax(wei, dim=1)
+        wei = F.softmax(wei, dim=-1)
 
         # perform weighted aggregation of values
         v = self.value(x)
@@ -154,7 +154,7 @@ class BigramLanguageModel(nn.Module):
             idx_cond = idx[:, -block_size:]
             logits, _ = self(idx_cond)
             logits = logits[:, -1, :]
-            probs = F.softmax(logits, dim=1)
+            probs = F.softmax(logits, dim=-1)
             idx_next = torch.multinomial(probs, num_samples=1)  # (B, 1)
             idx = torch.cat((idx, idx_next), dim=1)  # (B, T+1)
 
