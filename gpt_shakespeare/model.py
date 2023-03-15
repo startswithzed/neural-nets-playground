@@ -16,7 +16,7 @@ n_layer = 6
 dropout = 0.2
 
 # read the input dataset
-with open('data/tinyshakespeare.txt', 'r', encoding='utf-8') as f:
+with open('../data/tinyshakespeare.txt', 'r', encoding='utf-8') as f:
     text = f.read()
 
 # define encoder and decoder
@@ -217,6 +217,6 @@ output = decode(m.generate(context, max_new_tokens=500)[0].tolist())
 print(output)
 
 # write output to file
-with open('output.txt', 'w', encoding='utf-8') as f:
+with open('../output.txt', 'w', encoding='utf-8') as f:
     f.write(output)
     f.close()
