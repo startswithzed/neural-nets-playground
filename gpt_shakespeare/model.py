@@ -3,8 +3,9 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 # hyper parameters
-batch_size = 64
-block_size = 256
+
+batch_size = 64  # number of blocks in a single batch. ex_value = 4
+block_size = 256  # max number of tokens in a single chunk(series of tokens). ex_value: 8
 max_iters = 5000
 eval_interval = 500
 learning_rate = 3e-4
